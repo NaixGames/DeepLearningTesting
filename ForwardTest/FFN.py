@@ -2,7 +2,7 @@ import torch
 import Functions
 
 class FFNN(torch.nn.Module):
-  def __init__(self, input_size : int, inner_layers_sizes, activation_functions, output_size):
+  def __init__(self, input_size : int, inner_layers_sizes : list[int], activation_functions : list[callable], output_size : int):
     super(FFNN, self).__init__()
     
     self.inner_layers = len(inner_layers_sizes)
@@ -24,7 +24,7 @@ class FFNN(torch.nn.Module):
     self.layers_bias = torch.nn.ParameterList([layers_b[i] for i in range(len(layers_b))])
     self.activation_functions = torch.nn.ParameterList([activation_functions[i] for i in range(len(activation_functions))])
 
-  def summarize(self):
+  def summarize(self) -> str:
     result = "Summary: " + "\n"
     for name, param in self.named_parameters():
       result += name + " - dimension " + str(param.size()) + ": + " + str(param)
@@ -32,7 +32,7 @@ class FFNN(torch.nn.Module):
       
     return result
   
-  def forward(self, x):
+  def forward(self, x : torch.Tensor) -> torch.Tensor:
     result = x
     
     for i in range(0, self.inner_layers+1):
@@ -46,5 +46,7 @@ if __name__ == "__main__":
   print(red.summarize())
 
   x_input = torch.rand(20, 300)
+  print("Input:")
+  print(x_input)
   print("Forward result:")
   print(red.forward(x_input))

@@ -1,16 +1,16 @@
 import torch
 
 
-def relu(T):
+def relu(T : torch.Tensor) -> torch.Tensor:
   return torch.relu(T)
 
-def swish(T, beta):
+def swish(T : torch.Tensor, beta : float) -> torch.Tensor:
   return T*torch.sigmoid(T*beta)
 
-def celu(T, alpha):
+def celu(T : torch.Tensor, alpha : float) -> torch.Tensor:
   return relu(T) - relu(-alpha*(torch.exp(T/alpha)-1))
 
-def softmax(T, dim, stabilize=True):
+def softmax(T : torch.Tensor, dim : int, stabilize : bool =True):
   targetTensor = T
   if stabilize:
     x_max = T.max(dim=dim, keepdim=True).values
