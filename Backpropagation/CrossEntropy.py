@@ -3,13 +3,13 @@ import torch
 # This is all done for two dimensions, idk if it is worth to generalize
 def CELoss(Q : torch.Tensor, P : torch.Tensor, estable : bool = True, epsilon : float =1e-8) -> float:
   entropy_tensor = LogEntropy(P, Q, estable, epsilon)  
-  partial_sum_tensor = torch.sum(entropy_tensor, dim = 0)
+  partial_sum_tensor = torch.sum(entropy_tensor, dim = 1)
   partial_sum_tensor = partial_sum_tensor/partial_sum_tensor.size(dim = 0)
   return partial_sum_tensor.sum()
 
 def LogEntropy(P : torch.Tensor, Q : torch.Tensor, estable : bool = True, epsilon : float = 1e-8) -> torch.Tensor:
-  Q_normalized = StableTensorLog(Q, estable, epsilon)
-  return -1*P*torch.log(Q_normalized)
+  Q_log = StableTensorLog(Q, estable, epsilon)
+  return -1*P*Q_log
 
 def StableTensorLog(Q: torch.Tensor, estable : bool = True, epsilon : float = 1e-8) -> torch.Tensor:
   Q_normalized = Q
@@ -19,21 +19,19 @@ def StableTensorLog(Q: torch.Tensor, estable : bool = True, epsilon : float = 1e
 
 # Tu código acá
 def CategoricalCELoss(Q : torch.Tensor, Target : torch.Tensor, estable : bool =True, epsilon : float =1e-8) -> float:
-  Q_normalized = StableTensorLog(Q, estable, epsilon)
-  projected_tensor = Q_normalized[Target]
-  print("DEBUG")
-  print(Q_normalized)
-  print(projected_tensor)
-  projected_tensor = projected_tensor/projected_tensor.size(dim = 0)
-  return projected_tensor.sum()
+  projected_tensor = torch.Tensor([Q[i, Target[i]] for i in range(0, Q.size()[0])])
+  projected_log = StableTensorLog(projected_tensor, estable, epsilon)
+  projected_log = projected_log/projected_log.size(dim = 0)
+  return -1*projected_log.sum()
 
 
 
 if __name__ == "__main__":
-  #TOdo check that indexes are correct. I am getting dizzy in which one is the category and which one is the feature
+  #For each one this should be probabilities that different data fit on different classes
+  #the first dimension "moves" in direction of different data points and the second dimension moves on possible probability classes
 
-  P_input = torch.rand(20, 300)
-  Q_input = torch.rand(20, 300)
+  P_input = torch.rand(300, 20)
+  Q_input = torch.rand(300, 20)
   print("P input:")
   print(P_input)
   print("Q input:")
@@ -44,7 +42,7 @@ if __name__ == "__main__":
   print(CELoss(Q_input, P_input))
 
   print("Categorical loss")
-  Q_input = torch.rand(20, 3)
+  Q_input = torch.rand(6, 4)
   print(Q_input)
-  indexes = torch.tensor([6,0,3])
+  indexes = torch.tensor([1,0,3,2,2,1])
   print(CategoricalCELoss(Q_input, indexes))
