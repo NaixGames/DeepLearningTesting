@@ -14,10 +14,10 @@ def LogEntropy(P : torch.Tensor, Q : torch.Tensor, estable : bool = True, epsilo
 def StableTensorLog(Q: torch.Tensor, estable : bool = True, epsilon : float = 1e-8) -> torch.Tensor:
   Q_normalized = Q
   if (estable):
-    Q_normalized = torch.relu(Q - epsilon) + epsilon
+    Q_normalized = torch.clamp(Q, min=epsilon)
   return torch.log(Q_normalized)
 
-# Tu código acá
+
 def CategoricalCELoss(Q : torch.Tensor, Target : torch.Tensor, estable : bool =True, epsilon : float =1e-8) -> float:
   projected_tensor = torch.Tensor([Q[i, Target[i]] for i in range(0, Q.size()[0])])
   projected_log = StableTensorLog(projected_tensor, estable, epsilon)

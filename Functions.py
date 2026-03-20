@@ -1,5 +1,18 @@
 import torch
 
+def differentiate(func : callable) -> callable:
+    if (func == sigmoid):
+        return sigmoid_der
+    if (func == tanh):
+        return tanh_der
+    if (func == relu):
+        return relu_grad
+    if (func == swish):
+        return swish_grad
+    if (func == celu):
+        return celu_grad
+    print("Function derivative not defined")
+    return None
 
 def sigmoid(T : torch.Tensor) -> torch.Tensor:
     return torch.reciprocal(1 + torch.exp(-1*T))
