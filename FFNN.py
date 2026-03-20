@@ -61,12 +61,20 @@ class FFNN(torch.nn.Module):
 
     return Functions.softmax(result, 1)
   
+  def clear_grad(self):
+    for param in self.parameters():
+      if (param.grad is not None):
+        param.grad.zero_()
+
+
   def backward(self, x, y, y_pred):
   
     # Once again, last layer is different
     L = self.inner_layers
     BatchSize = x.size()[0]
     
+    #Note in this iteration we accumulate grad to allow flexibility, like multiple loss functions, in the future
+
     dL_dlastu = (y_pred - y)/BatchSize #Assume cross entropy loss.)
     self.layers_weights[L].grad = self.h_results[L-1].t() @ dL_dlastu
     self.layers_bias[L].grad = dL_dlastu.sum(dim = 0, keepdim=True)
@@ -81,14 +89,10 @@ class FFNN(torch.nn.Module):
       self.layers_bias[i].grad = dL_dlastu.sum(dim=0, keepdim=True)
       dL_dlasth = dL_dlastu @ self.layers_weights[i].t()
 
-    print("Initial layer")
     # Propagate to first layer in which the h is the input
     dL_dlastu = dL_dlasth * self.derivative_functions[0](self.u_results[0])
-    print("dL_dlastu: \n " + str(dL_dlastu))
     self.layers_weights[0].grad = x.t() @ dL_dlastu
-    print("self.layers_weights[0].grad: \n " + str(self.layers_weights[0].grad))
     self.layers_bias[0].grad = dL_dlastu.sum(dim=0, keepdim=True)
-    print("self.layers_bias[0].grad: \n " + str(self.layers_bias[0].grad))
 
   def numeric_grad_check(self, x: torch.Tensor, y : torch.Tensor, step : float = 1e-3) -> float:
     with torch.no_grad():
@@ -118,7 +122,7 @@ if __name__ == "__main__":
   sample_size = 100
   possible_classes = 5
   features_size = 5
-  inner_layers = [10, 20]
+  inner_layers = [100, 200]
   function_array = [Functions.sigmoid, Functions.tanh]
 
   #Optional parameter for some functions
@@ -144,7 +148,7 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  red = FFNN(features_size,[10, 20], function_array, derivatives_array, possible_classes)
+  red = FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes)
   print(red.summarize())
 
   x_input = torch.rand(sample_size, features_size) 
