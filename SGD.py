@@ -23,7 +23,7 @@ class SGD():
             y_pred = net.forward(x)
             loss = CrossEntropy.CELoss(y_pred, y)
             net.backward(x, y, y_pred)
-            optimizer.step()
+            self.step()
         
         if (i % print_frequency == 0):
             print("Current loss")
@@ -33,14 +33,15 @@ class SGD():
     for i in range(epochs):
         dataloader = DataLoader(dataset, batch_size)
         for x,y in dataloader:
-            x = x.to('cuda')
+            x_parse = x.view(x.size(0), -1)
+            x_parse = x_parse.to('cuda')
             y_parse = functional_parse.one_hot(y, data_classes)
-            y = y.to('cuda')
+            y_parse = y_parse.to('cuda')
             net.clear_grad()
-            y_pred = net.forward(x)
+            y_pred = net.forward(x_parse)
             loss = CrossEntropy.CELoss(y_pred, y_parse)
-            net.backward(x, y_parse, y_pred)
-            optimizer.step()
+            net.backward(x_parse, y_parse, y_pred)
+            self.step()
         
         if (i % print_frequency == 0):
             print("Current loss")

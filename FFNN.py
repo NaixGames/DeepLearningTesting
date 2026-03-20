@@ -2,6 +2,10 @@ import torch
 import Functions
 import CrossEntropy
 
+
+#TODO: Allow for this NN to work with general tensors as input data, instead of waiting for two dimensional
+#This assumption is seen when defining the first W tensor (in which I assume it is two dimensional)
+#and also when doing matrix multiplication in the forward and backward methods
 class FFNN(torch.nn.Module):
   def __init__(self, features_size : int, inner_layers_sizes : list[int], activation_functions : list[callable], derivative_functions : list[callable], categories_size : int):
     super(FFNN, self).__init__()

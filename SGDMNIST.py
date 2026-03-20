@@ -20,10 +20,13 @@ if __name__ == "__main__":
   inner_layers = [32, 16]
   function_array = [Functions.relu, Functions.relu]
 
+    
+  plot_data_sample = False
+
   #Param for optimizer
   step = 0.00001
-  frequency_loss_print = 1000
-  epochs = 10000
+  frequency_loss_print = 10
+  epochs = 1000
   batch_size = 100
 
   assert(batch_size <= sample_size)
@@ -70,16 +73,17 @@ if __name__ == "__main__":
   print('Cantidad total de datos:',len(dataset))
 
   # Show some examples
-  n_ejemplos = 3
-  fig, axs = subplots(nrows=n_ejemplos, figsize=(2,n_ejemplos*3))
+  if plot_data_sample:
+    n_ejemplos = 3
+    fig, axs = subplots(nrows=n_ejemplos, figsize=(2,n_ejemplos*3))
 
-  for i in range(n_ejemplos):  
-    idx = random.randint(0,len(dataset))
-    T, l = dataset[idx]
-    img = T.view(28,28).numpy()
-    axs[i].set_title("clase: "+ str(l))
-    axs[i].imshow(img)
-  fig.show()  
+    for i in range(n_ejemplos):  
+        idx = random.randint(0,len(dataset))
+        T, l = dataset[idx]
+        img = T.view(28,28).numpy()
+        axs[i].set_title("clase: "+ str(l))
+        axs[i].imshow(img)
+    fig.show()
 
   dataloader = DataLoader(dataset, batch_size)
   optimizer = SGD.SGD(net, step)
