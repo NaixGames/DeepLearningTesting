@@ -148,15 +148,15 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  red = FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes)
-  print(red.summarize())
+  net = FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes)
+  print(net.summarize())
 
   x_input = torch.rand(sample_size, features_size) 
   
   print("Input:")
   print(x_input)
   print("Forward result:")
-  y_pred = red.forward(x_input)
+  y_pred = net.forward(x_input)
   print(y_pred)
 
   #Note it is REALLY important this is a probability measure, if not the grad computations are all wrong and the grad check gives garbage.
@@ -166,14 +166,14 @@ if __name__ == "__main__":
   print("real classes")
   print(y)
   print("u results")
-  print(red.u_results)
+  print(net.u_results)
   print("h results")
-  print(red.h_results)
+  print(net.h_results)
 
-  red.backward(x_input, y, y_pred)
+  net.backward(x_input, y, y_pred)
   print("BACK PROPAGATION FINISHED")
   print("Backpropagation finished. Doing grad check.")
   #Note this only make sense in the case the derivatives are smooth. When using relu you will get gradients "close to 1" in areas where the derivative jumps
   #Regardless of how good this computation is. Use sigmoids for more stable checks
-  print(red.numeric_grad_check(x_input, y)) 
+  print(net.numeric_grad_check(x_input, y)) 
 
