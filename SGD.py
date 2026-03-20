@@ -4,6 +4,7 @@ import CrossEntropy
 import torch
 import RandomDataset
 from torch.utils.data import Dataset, DataLoader
+import torch.nn.functional as functional_parse
 
 class SGD():
   def __init__(self, network : FFNN, rate : float = 1e-3):
@@ -22,6 +23,23 @@ class SGD():
             y_pred = net.forward(x)
             loss = CrossEntropy.CELoss(y_pred, y)
             net.backward(x, y, y_pred)
+            optimizer.step()
+        
+        if (i % print_frequency == 0):
+            print("Current loss")
+            print(loss)
+
+  def train_FFNN_MNIST(self, net : FFNN, dataset : Dataset, epochs : int =1, batch_size : int =1 , print_frequency : int = 10, data_classes : int = 10):
+    for i in range(epochs):
+        dataloader = DataLoader(dataset, batch_size)
+        for x,y in dataloader:
+            x = x.to('cuda')
+            y_parse = functional_parse.one_hot(y, data_classes)
+            y = y.to('cuda')
+            net.clear_grad()
+            y_pred = net.forward(x)
+            loss = CrossEntropy.CELoss(y_pred, y_parse)
+            net.backward(x, y_parse, y_pred)
             optimizer.step()
         
         if (i % print_frequency == 0):
