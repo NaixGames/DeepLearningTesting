@@ -83,7 +83,7 @@ if __name__ == "__main__":
     func = function_array[i]
     #if we need an extra parameter, we "project" the function and the derivative
     #Note we do this after we got the derivatives, mainly because, if not, checking the lambda would give an incorrect check,
-    #since the lambda results for "different definitions" is not the same
+    #since the lambda results for "different definitions" is not the same (smth smth value vs reference smth smth)
     if (func == Functions.swish):
       function_array[i] = lambda x : Functions.swish(x, beta_swish)
       derivatives_array[i] = lambda x : Functions.swish_grad(x, beta_swish)

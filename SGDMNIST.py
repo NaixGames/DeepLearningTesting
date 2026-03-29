@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 if __name__ == "__main__":
-  # --- Pamereters definitions ---
+  # Pamereters definitions
   device = 'cuda'
 
   sample_size = 10000
@@ -19,7 +19,6 @@ if __name__ == "__main__":
   features_size = 784
   inner_layers = [32, 16]
   function_array = [Functions.relu, Functions.relu]
-
     
   plot_data_sample = False
 

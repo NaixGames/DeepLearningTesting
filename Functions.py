@@ -63,6 +63,7 @@ def celu_grad(T : torch.Tensor, alpha : float) -> torch.Tensor:
 
   
 if __name__ == "__main__":
+  #This is mainly so have an easy check that it is all working fine
 	x = torch.randn(3, 4)
 	print("Printing the tensor")
 	print(x)
