@@ -7,13 +7,14 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as functional_parse
 
 class SGD():
-  def __init__(self, network : FFNN, rate : float = 1e-3):
+  def __init__(self, network : FFNN, rate : float = 1e-3, decay = 0):
     self.network = network
     self.rate = rate
+    self.decay = decay
   
   def step(self):
     for param in self.network.parameters():
-      param.data -= param.grad*self.rate
+      param.data = (1-self.decay)*param.data - param.grad*self.rate
 
   def train_FFNN(self, net : FFNN, dataset : Dataset, epochs : int =1, batch_size : int =1, print_frequency : int = 10):
     for i in range(epochs):
@@ -56,10 +57,14 @@ if __name__ == "__main__":
   possible_classes = 5
   features_size = 5
   inner_layers = [20, 20, 20, 20, 20, 20, 20, 20]
-  function_array = [Functions.relu, Functions.relu, Functions.relu, Functions.relu, Functions.relu, Functions.relu, Functions.relu, Functions.relu]
+  inner_layers = [20, 20, 20]
+  function_array = [Functions.relu, Functions.relu, Functions.relu]
+
+  keep_prob = [0.9, 0.75, 0.75, 0.75]
+  init_type = [2, 2, 2, 2, 2]
 
   #Param for optimizer
-  step = 0.00001
+  step = 0.01
   frequency_loss_print = 1000
   epochs = 10000
   batch_size = 100
@@ -91,13 +96,13 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes)
+  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prop, init_type)
   # --- Set device to GPU ---
   net.to(device)
 
   # --- train ---
 
-  dataset = RandomDataset.RandomDataset(sample_size, features_size, possible_classes, "cuda")
+  dataset = RandomDataset.RandomDataset(sample_size, features_size, possible_classes, device)
 
   print("Input:")
   print(dataset.x)
@@ -107,8 +112,20 @@ if __name__ == "__main__":
   print("real classes")
   print(dataset.y)
 
-  optimizer = SGD(net, step)
+  optimizer = SGD(net, step, 0.0001)
   optimizer.train_FFNN(net, dataset, epochs, batch_size, frequency_loss_print)
 
+  print("Dataset")
+  input = dataset.x
+  print(input)
+
+  print("Predicted for dataset")
+  print(net.predict(input))
+  print("Real answer")
+  print(dataset.y)
+
+
+  print("Net")
+  print(net.summarize())
 
 
