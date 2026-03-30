@@ -56,7 +56,6 @@ if __name__ == "__main__":
   sample_size = 100
   possible_classes = 5
   features_size = 5
-  inner_layers = [20, 20, 20, 20, 20, 20, 20, 20]
   inner_layers = [20, 20, 20]
   function_array = [Functions.relu, Functions.relu, Functions.relu]
 
