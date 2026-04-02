@@ -1,4 +1,4 @@
-This repository is me learning a bunch of deep learning methods, basically from scratch, but using PyTorch.
+This repository is me learning a bunch of deep learning methods, basically from scratch, but using PyTorch to have access its Tensor classes.
 
 
 
@@ -7,8 +7,6 @@ My objective is to understand methods behind its work, so I am implementing thin
 
 
 Some things I still want to do:
-
-
 
 
 

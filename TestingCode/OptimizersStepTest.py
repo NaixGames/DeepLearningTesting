@@ -28,8 +28,8 @@ if __name__ == "__main__":
 
   #Param for optimizer
   step = 0.01
-  frequency_loss_print = 1000
-  epochs = 10000
+  frequency_loss_print = 1
+  epochs = 1
   batch_size = 100
   momentum = 0.1
   decay = 0.000001
