@@ -11,7 +11,14 @@ import CrossEntropy
 #and also when doing matrix multiplication in the forward and backward methods
 
 class FFNN(torch.nn.Module):
-  def __init__(self, features_size : int, inner_layers_sizes : list[int], activation_functions : list[callable], derivative_functions : list[callable], categories_size : int, keep_prop = None, init_type : list[int] = None):
+  def __init__(self, features_size : int, 
+               inner_layers_sizes : list[int], 
+               activation_functions : list[callable], 
+               derivative_functions : list[callable], 
+               categories_size : int, 
+               keep_prop = None, 
+               init_type : list[int] = None,
+               batch_norm : list[bool] = None):
     super(FFNN, self).__init__()
     
     assert(len(activation_functions) == len(derivative_functions))
@@ -19,6 +26,16 @@ class FFNN(torch.nn.Module):
     assert(keep_prop == None or len(keep_prop) == len(inner_layers_sizes) + 1)
 
     self.inner_layers = len(inner_layers_sizes)
+
+    if batch_norm is None:
+      batch_norm = [False] * len(inner_layers_sizes)
+    assert len(batch_norm) == len(inner_layers_sizes)
+
+    self.batch_norm = batch_norm
+
+    if keep_prop is not None:
+      for prob in keep_prop:
+          assert(0 < prob <= 1)
     
     layers_w = []
     layers_b = []
@@ -38,10 +55,15 @@ class FFNN(torch.nn.Module):
     self.activation_functions = activation_functions
     self.derivative_functions = derivative_functions
     self.keep_prop = keep_prop
-
-    if keep_prop is not None:
-      for prob in keep_prop:
-          assert(0 < prob <= 1)
+    self.bn_gamma = torch.nn.ParameterList([torch.nn.Parameter(torch.ones(1, inner_layers_sizes[i])) for i in range(len(inner_layers_sizes))])
+    self.bn_beta = torch.nn.ParameterList([torch.nn.Parameter(torch.zeros(1, inner_layers_sizes[i])) for i in range(len(inner_layers_sizes))])
+    self.bn_running_mean = [torch.zeros(1, size) for size in inner_layers_sizes]
+    self.bn_running_var = [torch.ones(1, size) for size in inner_layers_sizes]
+    #This values are for doing an exponential moving average for computting the BN values. 
+    #They COULD be separate params, but I got so many at this point that I am happy keeping everything a bit cleaner with 
+    #Less control. Since most likely I will always use the values below.
+    self.bn_momentum = 0.9
+    self.bn_eps = 1e-5
 
   def summarize(self) -> str:
     result = "Summary: " + "\n"
@@ -72,6 +94,8 @@ class FFNN(torch.nn.Module):
     u_results = []
     h_results = []
 
+    self.bn_cache = []
+
     L = self.inner_layers
 
     dropout_mask = []
@@ -86,9 +110,18 @@ class FFNN(torch.nn.Module):
     for i in range(0, L):
       result = result @ self.layers_weights[i] + self.layers_bias[i]
       u_results.append(result)
+
+      #Apply Batch normalization
+      if self.batch_norm[i]:
+        result, cache = self.batch_norm_forward(result, i)
+        self.bn_cache.append(cache)
+
+      else:
+        self.bn_cache.append(None)
+
       result = self.activation_functions[i](result)
 
-      #apply droupout
+      #Apply droupout
       if self.keep_prop is not None:
         prob = self.keep_prop[i + 1]
         mask = (torch.rand_like(result) <= prob).float()
@@ -117,6 +150,10 @@ class FFNN(torch.nn.Module):
 
     for i in range(0, L):
       result = result @ self.layers_weights[i] + self.layers_bias[i]
+
+      if self.batch_norm[i]:
+        result = self.batch_norm_inference(result, i)
+
       result = self.activation_functions[i](result)
  
     #last layer is different! It doesnt have an activation function, but we softmax
@@ -125,7 +162,7 @@ class FFNN(torch.nn.Module):
     return Functions.softmax(result, 1)
   
 
-  def backward(self, x, y, y_pred):
+  def backward(self, x : torch.Tensor, y  : torch.Tensor, y_pred : torch.Tensor) -> None:
   
     # Once again, last layer is different
     L = self.inner_layers
@@ -133,33 +170,77 @@ class FFNN(torch.nn.Module):
     
     #Note in this iteration we accumulate grad to allow flexibility, like multiple loss functions, in the future
 
-    dL_dlastu = (y_pred - y)/BatchSize #Assume cross entropy loss.)
+    dL_dlastu = (y_pred - y)/BatchSize #Assume cross entropy loss.
+
     self.layers_weights[L].grad = self.h_results[L-1].t() @ dL_dlastu
     self.layers_bias[L].grad = dL_dlastu.sum(dim = 0, keepdim=True)
     dL_dlasth = dL_dlastu @ self.layers_weights[L].t()
 
-
     # Propagate backwards; note first layer is different too!
 
-    for i in range(L-1, 0, -1):
-      dL_dlasth = self.give_drop_grad(dL_dlasth, i+1)
+    for i in range(L-1, -1, -1):
+      dL_dlasth = self.give_drop_grad(dL_dlasth, i + 1)
 
       dL_dlastu = dL_dlasth * self.derivative_functions[i](self.u_results[i])
-      self.layers_weights[i].grad = self.h_results[i-1].t() @ dL_dlastu
-      self.layers_bias[i].grad = dL_dlastu.sum(dim=0, keepdim=True)
-      dL_dlasth = dL_dlastu @ self.layers_weights[i].t()
 
-    # Propagate to first layer in which the h is the input, also apply dropout
-    dL_dlasth = self.give_drop_grad(dL_dlasth, 1)
+      if self.batch_norm[i]:
+        dLnorm_dlastu, dgamma, dbeta = self.batch_norm_backward(dL_dlastu, self.bn_cache[i], i)
+        self.bn_gamma[i].grad = dgamma
+        self.bn_beta[i].grad = dbeta
+      else:
+        dLnorm_dlastu = dL_dlastu
 
-    dL_dlastu = dL_dlasth * self.derivative_functions[0](self.u_results[0])
+      if (i > 0):
+        self.layers_weights[i].grad = self.h_results[i-1].t() @ dLnorm_dlastu
+      
+      else:
+        x_masked = x
+        x_masked = self.give_drop_grad(x_masked, 0)
+        self.layers_weights[0].grad = x_masked.t() @ dLnorm_dlastu
+      
+      self.layers_bias[i].grad = dLnorm_dlastu.sum(dim=0, keepdim=True)
+      dL_dlasth = dLnorm_dlastu @ self.layers_weights[i].t()
 
-    #apply dropout on input layer
-    x_masked = x
-    x_masked = self.give_drop_grad(x_masked, 0)
 
-    self.layers_weights[0].grad = x_masked.t() @ dL_dlastu
-    self.layers_bias[0].grad = dL_dlastu.sum(dim=0, keepdim=True)
+  def batch_norm_forward(self, x  : torch.Tensor, layer_index : int):
+    mean = x.mean(dim=0, keepdim=True)
+    var = x.var(dim=0, keepdim=True, unbiased=False)
+
+    x_hat = (x - mean) / torch.sqrt(var + self.bn_eps)
+
+    self.bn_running_mean[layer_index] = self.bn_momentum * self.bn_running_mean[layer_index] + (1 - self.bn_momentum) * mean
+    self.bn_running_var[layer_index] = self.bn_momentum * self.bn_running_var[layer_index] + (1 - self.bn_momentum) * var
+
+    out = self.bn_gamma[layer_index] * x_hat + self.bn_beta[layer_index]
+    return out, (x, x_hat, mean, var)
+
+
+  def batch_norm_inference(self, x : torch.Tensor, layer_index : int) -> torch.Tensor:
+    mean = self.bn_running_mean[layer_index]
+    var = self.bn_running_var[layer_index]
+
+    x_hat = (x - mean) / torch.sqrt(var + self.bn_eps)
+    return self.bn_gamma[layer_index] * x_hat + self.bn_beta[layer_index]
+  
+
+  def batch_norm_backward(self, dLast_u, cache : torch.Tensor , layer_index : int):
+        x, x_hat, mean, var = cache
+        N = x.shape[0]
+        gamma = self.bn_gamma[layer_index]
+
+        std_inv = 1.0 / torch.sqrt(var + self.bn_eps)
+
+        dx_hat = dLast_u * gamma
+
+        dvar = torch.sum(dx_hat * (x - mean) * -0.5 * std_inv**3, dim=0, keepdim=True)
+        dmean = torch.sum(dx_hat * -std_inv, dim=0, keepdim=True) + dvar * torch.mean(-2 * (x - mean), dim=0, keepdim=True)
+
+        dx = dx_hat * std_inv + dvar * 2 * (x - mean) / N + dmean / N
+
+        dgamma = torch.sum(dLast_u * x_hat, dim=0, keepdim=True)
+        dbeta = torch.sum(dLast_u, dim=0, keepdim=True)
+
+        return dx, dgamma, dbeta
 
 
   def give_drop_grad(self, grad : torch.Tensor, index : int):

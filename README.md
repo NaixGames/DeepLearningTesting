@@ -10,6 +10,8 @@ Some things I still want to do:
 
 
 
+* Do a correct prediction rate computation for errors
+* Do a way to stopping and resuming training
 * Do some convolution networks
 * Support general tensors instead of assuming "matrix" form
 * Do some language modelling

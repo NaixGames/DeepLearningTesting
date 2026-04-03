@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
   keep_prob = [0.9, 0.75, 0.75, 0.75]
   init_type = [2, 2, 2, 2, 2]
+  batch_norm = [True, True, True]
 
   #Param for optimizer
   step = 0.01
@@ -61,7 +62,7 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, init_type)
+  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, init_type, batch_norm)
   # --- Set device to GPU ---
   net.to(device)
 
