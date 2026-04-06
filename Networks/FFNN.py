@@ -261,6 +261,8 @@ class FFNN(torch.nn.Module):
       if (param.grad is not None):
         param.grad.zero_()
 
+    self.bn_cache = []
+
 
   def numeric_grad_check(self, x: torch.Tensor, y : torch.Tensor, step : float = 1e-3) -> float:
     with torch.no_grad():

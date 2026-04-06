@@ -11,7 +11,7 @@ from FFNN import FFNN
 
 class Trainer():
     def train_FFNN(self, net : FFNN, optimizer : Optimizer, dataset : Dataset, epochs : int =1, batch_size : int =1, 
-                   print_frequency : int = 10, compute_error_rate : bool = True) -> None:
+                   print_frequency : int = 10, compute_error_rate : bool = True, flush_cache : bool = True) -> None:
         for i in range(epochs):
             dataloader = DataLoader(dataset, batch_size)
             for x,y in dataloader:
@@ -29,10 +29,13 @@ class Trainer():
                     print("Current error rate")
                     print(self.compute_error_rate(net, dataset))
 
+                if (flush_cache):
+                    torch.cuda.empty_cache()
+
 
     def train_FFNN_MNIST(self, net : FFNN, optimizer : Optimizer, dataset : Dataset, epochs : int =1, 
                          batch_size : int =1, print_frequency : int = 10, data_classes : int = 10, 
-                         compute_error_rate : bool = True) -> None:
+                         compute_error_rate : bool = True, flush_cache : bool = True) -> None:
         
         for i in range(epochs):
             dataloader = DataLoader(dataset, batch_size)
@@ -54,6 +57,9 @@ class Trainer():
                 if (compute_error_rate):
                     print("Current error rate")
                     print(self.compute_error_rate_MNIST(net, dataset))
+
+                if (flush_cache):
+                    torch.cuda.empty_cache()
 
 
     def compute_error_rate(self, net : FFNN, dataset : Dataset) -> float:

@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
   #Param for optimizer
   step = 0.01
-  frequency_loss_print = 10
+  frequency_loss_print = 50
   epochs = 10000
   batch_size = 100
   momentum = 0.1
