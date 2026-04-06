@@ -15,7 +15,7 @@ from Adam import Adam
 
 if __name__ == "__main__":
   # --- Pamereters definitions ---
-  device = 'cpu'
+  device = 'gpu'
 
   sample_size = 100
   possible_classes = 5
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
   #Param for optimizer
   step = 0.01
-  frequency_loss_print = 1000
+  frequency_loss_print = 100
   epochs = 10000
   batch_size = 100
   momentum = 0.1
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
 #  optimizer = SGD(net, step, decay, momentum)
 #  optimizer = RSMProp(net, step, decay)
-  optimizer = Adam(net, step, 0)
+  optimizer = Adam(net, step, decay)
 
   trainer = Trainer()
   trainer.train_FFNN(net, optimizer, dataset, epochs, batch_size, frequency_loss_print)
