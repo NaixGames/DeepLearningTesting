@@ -23,7 +23,7 @@ class Trainer():
             
             if (i % print_frequency == 0):
                 print("Current loss")
-                print(loss)
+                print(loss.item())
 
                 if (compute_error_rate):
                     print("Current error rate")
@@ -49,7 +49,7 @@ class Trainer():
             
             if (i % print_frequency == 0):
                 print("Current loss")
-                print(loss)
+                print(loss.item())
 
                 if (compute_error_rate):
                     print("Current error rate")
@@ -78,7 +78,9 @@ class Trainer():
 
         for x,y in dataloader:
             x_parse = x.view(x.size(0), -1)
+            x_parse = x_parse.to('cuda')
             y_pred = net.predict(x_parse).argmax(dim=1)
-            errors += (y_pred != y).sum().item()
+            y_parse = y.to('cuda')
+            errors += (y_pred != y_parse).sum().item()
 
         return errors / datasize

@@ -21,7 +21,7 @@ from torch.utils.data import Dataset, DataLoader
 
 if __name__ == "__main__":
   # --- Pamereters definitions ---
-  device = 'gpu'
+  device = 'cuda'
 
   sample_size = 10000
   possible_classes = 10
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
   #Param for optimizer
   step = 0.01
-  frequency_loss_print = 100
+  frequency_loss_print = 10
   epochs = 10000
   batch_size = 100
   momentum = 0.1
@@ -71,9 +71,8 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, init_type, batch_norm)
-  # --- Set device to GPU ---
-  net.to(device)
+  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, 
+                  init_type, batch_norm, device)
 
 
   # --- Download MNIST dataset, load it and plot it ---

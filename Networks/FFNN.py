@@ -18,7 +18,8 @@ class FFNN(torch.nn.Module):
                categories_size : int, 
                keep_prop = None, 
                init_type : list[int] = None,
-               batch_norm : list[bool] = None):
+               batch_norm : list[bool] = None,
+               device = 'cuda'):
     super(FFNN, self).__init__()
     
     assert(len(activation_functions) == len(derivative_functions))
@@ -57,13 +58,17 @@ class FFNN(torch.nn.Module):
     self.keep_prop = keep_prop
     self.bn_gamma = torch.nn.ParameterList([torch.nn.Parameter(torch.ones(1, inner_layers_sizes[i])) for i in range(len(inner_layers_sizes))])
     self.bn_beta = torch.nn.ParameterList([torch.nn.Parameter(torch.zeros(1, inner_layers_sizes[i])) for i in range(len(inner_layers_sizes))])
-    self.bn_running_mean = [torch.zeros(1, size) for size in inner_layers_sizes]
-    self.bn_running_var = [torch.ones(1, size) for size in inner_layers_sizes]
+    self.bn_running_mean = [torch.zeros(1, size).to(device) for size in inner_layers_sizes]
+    self.bn_running_var = [torch.ones(1, size).to(device) for size in inner_layers_sizes]
     #This values are for doing an exponential moving average for computting the BN values. 
     #They COULD be separate params, but I got so many at this point that I am happy keeping everything a bit cleaner with 
     #Less control. Since most likely I will always use the values below.
     self.bn_momentum = 0.9
     self.bn_eps = 1e-5
+
+    self.device = device
+    self.to(device)
+
 
   def summarize(self) -> str:
     result = "Summary: " + "\n"

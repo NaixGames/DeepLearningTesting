@@ -15,7 +15,7 @@ from Adam import Adam
 
 if __name__ == "__main__":
   # --- Pamereters definitions ---
-  device = 'gpu'
+  device = 'cuda'
 
   sample_size = 100
   possible_classes = 5
@@ -62,9 +62,7 @@ if __name__ == "__main__":
       function_array[i] = lambda x : Functions.celu(x, alpha_celu)
       derivatives_array[i] = lambda x : Functions.celu_grad(x, alpha_celu)
 
-  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, init_type, batch_norm)
-  # --- Set device to GPU ---
-  net.to(device)
+  net = FFNN.FFNN(features_size, inner_layers, function_array, derivatives_array, possible_classes, keep_prob, init_type, batch_norm, device)
 
   # --- train ---
 
