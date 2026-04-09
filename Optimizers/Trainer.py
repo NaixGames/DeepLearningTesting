@@ -7,11 +7,13 @@ import Optimizer;
 
 sys.path.append("../Networks")
 from FFNN import FFNN
+from NNSerializer import NNSerializer
 
 
 class Trainer():
     def train_FFNN(self, net : FFNN, optimizer : Optimizer, dataset : Dataset, epochs : int =1, batch_size : int =1, 
-                   print_frequency : int = 10, compute_error_rate : bool = True, flush_cache : bool = True) -> None:
+                   print_frequency : int = 10, compute_error_rate : bool = True, flush_cache : bool = True,
+                   save_train_data : bool = False, save_train_path : str = "TrainPath") -> None:
         for i in range(epochs):
             dataloader = DataLoader(dataset, batch_size)
             for x,y in dataloader:
@@ -32,10 +34,14 @@ class Trainer():
                 if (flush_cache):
                     torch.cuda.empty_cache()
 
+        if (save_train_data):
+            self.save_training_data(net, save_train_path)
+
 
     def train_FFNN_MNIST(self, net : FFNN, optimizer : Optimizer, dataset : Dataset, epochs : int =1, 
                          batch_size : int =1, print_frequency : int = 10, data_classes : int = 10, 
-                         compute_error_rate : bool = True, flush_cache : bool = True) -> None:
+                         compute_error_rate : bool = True, flush_cache : bool = True,
+                         save_train_data : bool = False, save_train_path : str = "TrainPath") -> None:
         
         for i in range(epochs):
             dataloader = DataLoader(dataset, batch_size)
@@ -60,6 +66,9 @@ class Trainer():
 
                 if (flush_cache):
                     torch.cuda.empty_cache()
+
+        if (save_train_data):
+            self.save_training_data(net, save_train_path)
 
 
     def compute_error_rate(self, net : FFNN, dataset : Dataset) -> float:
@@ -90,3 +99,15 @@ class Trainer():
             errors += (y_pred != y_parse).sum().item()
 
         return errors / datasize
+    
+    def save_training_data(self, net : FFNN, path : str) -> None:
+        serializer = NNSerializer(net)
+        serializer.save_params(path)
+        serializer.save_training_data(path)
+        
+    
+    def load_training_data(self, net : FFNN, path : str) -> bool:
+        serializer = NNSerializer(net)
+        serializer.load_params(path)
+        serializer.load_training_data(path)
+        return True 
