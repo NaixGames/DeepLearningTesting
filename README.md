@@ -10,9 +10,6 @@ Some things I still want to do:
 
 
 
-
-
-* Do a way to stopping and resuming training (Done, need to do some stop/resume testing)
 * Do some convolution networks
 * Support general tensors instead of assuming "matrix" form
 * Do some language modelling
