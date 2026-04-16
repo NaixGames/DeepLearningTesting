@@ -44,19 +44,19 @@ class GoogLeNet(nn.Module):
 
     # Inception blocks. Recall inputs are: N_channels, 3x3reduce, 5x5reduce, 3x3size, 5x5size, maxpoolsize, 1x1size 
     # Note the resulting number of channels is (3x3size + 5x5size + maxpoolsize + 1x1size)
-    self.inception3a = InceptionModule(192, 96, 16, 128, 32, 32, 64)
-    self.inception3b = InceptionModule(256, 128, 32, 192, 96,64, 128)
+    self.inception3a = InceptionModule.InceptionModule(192, 96, 16, 128, 32, 32, 64)
+    self.inception3b = InceptionModule.InceptionModule(256, 128, 32, 192, 96,64, 128)
     self.maxpool3 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
-    self.inception4a = InceptionModule(480, 96, 16, 208, 48, 64, 192)
-    self.inception4b = InceptionModule(512, 112, 24, 224, 64, 64, 160)
-    self.inception4c = InceptionModule(512, 128, 24, 256, 64, 64, 128)
-    self.inception4d = InceptionModule(512, 144, 32, 288, 64, 64, 112)
-    self.inception4e = InceptionModule(528, 160, 32, 320, 128, 128, 256)
+    self.inception4a = InceptionModule.InceptionModule(480, 96, 16, 208, 48, 64, 192)
+    self.inception4b = InceptionModule.InceptionModule(512, 112, 24, 224, 64, 64, 160)
+    self.inception4c = InceptionModule.InceptionModule(512, 128, 24, 256, 64, 64, 128)
+    self.inception4d = InceptionModule.InceptionModule(512, 144, 32, 288, 64, 64, 112)
+    self.inception4e = InceptionModule.InceptionModule(528, 160, 32, 320, 128, 128, 256)
     self.maxpool4 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
-    self.inception5a = InceptionModule(832, 160, 32, 320, 128, 128, 256)
-    self.inception5b = InceptionModule(832, 192, 48, 384, 128, 128, 384)
+    self.inception5a = InceptionModule.InceptionModule(832, 160, 32, 320, 128, 128, 256)
+    self.inception5b = InceptionModule.InceptionModule(832, 192, 48, 384, 128, 128, 384)
 
     self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
     self.dropout = nn.Dropout(0.4)
@@ -118,3 +118,62 @@ class GoogLeNet(nn.Module):
     logits = self.fc_out(hidden)
 
     return {'hidden': hidden, 'logits': logits, 'aux_logits': aux_logits}
+  
+
+if __name__ == "__main__":
+  from torch.utils.data import Dataset, DataLoader
+  import numpy as np
+  from scipy.spatial import distance
+
+  import torchvision
+  import torchvision.transforms as transforms
+  from torch.optim.lr_scheduler  import StepLR
+  from TrainUtils import train_for_classification, plot_results
+
+  transform = transforms.Compose(
+    [transforms.ToTensor(),
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+  trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+                                        download=True, transform=transform)
+  trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+                                            shuffle=True, num_workers=2)
+
+  testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+                                       download=True, transform=transform)
+  testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+                                         shuffle=False, num_workers=2)
+
+  classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+  # Definamos algunos hiper-parámetros
+  BATCH_SIZE = 128
+  LR = 0.01
+  EPOCHS = 10
+  REPORTS_EVERY = 1
+
+  net = GoogLeNet(10, True) 
+  optimizer = optim.Adam(net.parameters())
+  criterion = nn.CrossEntropyLoss() # función de pérdida
+  scheduler = StepLR(optimizer, step_size=10, gamma=LR) # (opcional) optim.lr_scheduler proporciona varios métodos para ajustar el lr según el número de épocas
+
+  train_loader = DataLoader(trainset, batch_size=BATCH_SIZE,
+                            shuffle=True, num_workers=2)
+  test_loader = DataLoader(testset, batch_size=4*BATCH_SIZE,
+                          shuffle=False, num_workers=2)
+
+  train_loss, acc = train_for_classification(net, train_loader, 
+                                            test_loader, optimizer, 
+                                            criterion, lr_scheduler=scheduler, 
+                                            epochs=EPOCHS, reports_every=REPORTS_EVERY)
+
+  plot_results(train_loss, acc)
+
+  #Test
+  x, y = list(test_loader)[0]
+  net.cpu()
+  net.eval()
+  y_pred = net(x)['logits'].max(dim=1)[1]
+
+  # Veamos como se comporta el modelo
+  print("Correct Test!" if (y==y_pred).sum()/len(x) >= .75 else "Failed Test! [acc]")

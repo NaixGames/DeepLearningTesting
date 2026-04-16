@@ -21,7 +21,7 @@ class InceptionModule(nn.Module):
     self.conv_5x5_c2 = nn.Conv2d(ch_5x5_reduce, ch_5x5, (5,5), stride = 1, padding = 2)
 
     self.pool = nn.MaxPool2d((3,3), stride = 1, padding = 1)
-    self.conv_1x1_pool = nn.Conv2d(1, ch_pool_proj, (1,1), stride = 1, padding = 0)
+    self.conv_1x1_pool = nn.Conv2d(in_channels, ch_pool_proj, (1,1), stride = 1, padding = 0)
 
     self.conv_1x1 = nn.Conv2d(in_channels, ch_1x1, (1,1), stride = 1, padding = 0)
 
