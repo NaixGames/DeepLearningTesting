@@ -30,7 +30,7 @@ class ConvNet(nn.Module):
         self.BN_1 = nn.BatchNorm2d(30)
         self.BN_2 = nn.BatchNorm1d(200)
 
-    def forward(self, x):
+    def forward(self, x : torch.Tensor) -> torch.Tensor:
         #We apply the convolution, do concatenation and apply relu
         x_3x3 = self.conv_3x3(x)
         x_5x5 = self.conv_5x5(x)
