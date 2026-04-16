@@ -148,14 +148,14 @@ if __name__ == "__main__":
 
   # Definamos algunos hiper-parámetros
   BATCH_SIZE = 128
-  LR = 0.01
+  LR = 0.1
   EPOCHS = 10
   REPORTS_EVERY = 1
 
   net = GoogLeNet(10, True) 
   optimizer = optim.Adam(net.parameters())
-  criterion = nn.CrossEntropyLoss() # función de pérdida
-  scheduler = StepLR(optimizer, step_size=10, gamma=LR) # (opcional) optim.lr_scheduler proporciona varios métodos para ajustar el lr según el número de épocas
+  criterion = nn.CrossEntropyLoss() 
+  scheduler = StepLR(optimizer, step_size=10, gamma=LR) 
 
   train_loader = DataLoader(trainset, batch_size=BATCH_SIZE,
                             shuffle=True, num_workers=2)
