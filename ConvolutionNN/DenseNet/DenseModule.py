@@ -2,20 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import DenseLayer
 
 class DenseModule(nn.Module):
-  def __init__(self, 
-               in_channels : int = 3, 
-               ch_3x3_reduce : int = 96, 
-               ch_5x5_reduce : int = 16,
-               ch_3x3 : int = 128,
-               ch_5x5 : int = 32,
-               ch_pool_proj : int = 32,
-               ch_1x1 : int = 64
-    ):
+  def __init__(self, input_channels : int, layers : int, k : int = 32):
     super(DenseModule, self).__init__()
-    
+    layers = []
+
+    for i in range(0, layers):
+      dense_layer = DenseLayer.DenseLayer(input_channels + i*k, k)
+      layers.append(dense_layer)
+
+    self.dense_block = nn.Sequential(*layers)
 
 
   def forward(self, x : torch.Tensor) -> torch.Tensor:
-    pass
+    return self.dense_block(x)
