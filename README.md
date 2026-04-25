@@ -1,17 +1,11 @@
 This repository is me learning a bunch of deep learning methods, basically from scratch, but using PyTorch to have access its Tensor classes.
-
-
+This is mostly inspired by the Deep Learning course by Jorge Perez and their take-home tasks.
 
 My objective is to understand methods behind its work, so I am implementing things like backpropagation and gradient descent myself.
 
+UPDATE: I did a bunch in this. I had a Feedforward neural network mostly done by me from scratch; including backpropagation and
+batch normalization. That was ton of fun, and helped understand how a bunch of this work. Later I did two convolutional neural networks,
+GoogleNet and DenseNet and use them on CIFAR10. Manage to train and use them for prediction pretty well!
 
-
-Some things I still want to do:
-
-
-
-* Do some convolution networks
-* Support general tensors instead of assuming "matrix" form
-* Do some language modelling
-* Do a "high level pytorch" version of some classes, to learn the pytorch way of doing things
+At this point I am a bit tired of this. I want to do some language modelling, but I will let some time pass before that :).
 

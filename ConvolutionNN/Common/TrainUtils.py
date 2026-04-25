@@ -78,7 +78,10 @@ def train_for_classification(net, train_loader, test_loader, optimizer,
                        + f'Loss:{avg_loss:02.5f}, '
                        + f'Train Acc:{avg_acc:02.1f}%')
       
+      
     tiempo_epochs += timer() - inicio_epoch
+
+    torch.cuda.empty_cache()
 
     if e % reports_every == 0:
       sys.stdout.write(', Validating...')
@@ -98,6 +101,8 @@ def train_for_classification(net, train_loader, test_loader, optimizer,
                        + f'Avg-Time:{tiempo_epochs/e:.3f}s.\n')
     else:
       sys.stdout.write('\n')
+
+    torch.cuda.empty_cache()
 
     if lr_scheduler is not None:
       lr_scheduler.step()

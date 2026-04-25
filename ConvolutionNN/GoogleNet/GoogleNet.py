@@ -120,10 +120,53 @@ class GoogLeNet(nn.Module):
     return {'hidden': hidden, 'logits': logits, 'aux_logits': aux_logits}
   
   def load_params(self) -> None:
-    pass
+    self.load_state_dict(torch.load("GoogleNet_weights.pth"))
 
   def save_params(self) -> None:
-    pass
+    torch.save(self.state_dict(), "GoogleNet_weights.pth")
+
+  def perform_evaluation_example(self) -> None:
+    #We use the net on some random example
+    from torchvision.datasets import CIFAR10
+    from torchvision.transforms import Compose, ToTensor, Normalize
+    import matplotlib.pyplot as plt
+    from random import randint
+    import torch.nn.functional as TF
+
+    tr = Compose([
+        ToTensor(), 
+        Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    test_dataset = CIFAR10('/.', train=False, download=False, transform=tr)
+    clases = ('Plane', 'Car', 'Bird', 'Cat', 'Deer', 
+            'Dog', 'Frog', 'Horse', 'Boat', 'Truck')
+
+    w, h = 6, 3
+    fig, axs = plt.subplots(h, w, figsize=(2*w,2*h))
+    for i in range(h):
+        for j in range(w):
+            idx = randint(0,len(test_dataset))
+            T, real = test_dataset[idx]
+            
+            # Convertimos la imagen en un batch
+            X = T.view(1,3,32,32).to('cpu')
+            self.eval()
+            Y = TF.softmax(self(X)['logits'], dim=1)
+            prob, pred = torch.max(Y, dim=1)
+            prob = prob.item()
+            pred = pred.item()
+            
+            T = T / 2 + 0.5
+            T = T.permute(1,2,0) 
+            
+            img = T.numpy()
+            title = clases[pred] + ' / ' + clases[real] 
+            axs[i,j].set_title(title)
+            axs[i,j].set_xticklabels([])
+            axs[i,j].set_yticklabels([])
+            axs[i,j].imshow(img)
+    plt.show(block=True)
 
   def train_routine(self, epoch : int) -> None:
     from torch.utils.data import Dataset, DataLoader
@@ -181,7 +224,7 @@ class GoogLeNet(nn.Module):
     self.eval()
     y_pred = self(x)['logits'].max(dim=1)[1]
 
-    # Veamos como se comporta el modelo
+    # We test the model and see if we pass 75%
     print("Correct Test!" if (y==y_pred).sum()/len(x) >= .75 else "Failed Test! [acc]")
 
 if __name__ == "__main__":
@@ -190,18 +233,38 @@ if __name__ == "__main__":
   use_aux_logit = True
 
   load_params = False
-  perform_traing = True
+  perform_training = True
   save_params = True
-  
-  epochs = 5
+  perform_evaluation_example = True
+  epochs = 10
+
+
+  #Load params if possible
+  import sys
+  inputs = sys.argv[1:]
+  for i in range(0, len(inputs)):
+    if (i == 0):
+      load_params = inputs[i] == "True"
+    if (i == 1):
+      perform_training = inputs[i] == "True"
+    if (i == 2):
+      save_params = inputs[i] == "True"
+    if (i == 3):
+      perform_evaluation_example = inputs[i] == "True"
+    if (i == 4):
+      epochs = int(inputs[i])
 
   net = GoogLeNet(number_classes, use_aux_logit)
 
   if (load_params):
     net.load_params()
 
-  if (perform_traing):
+  if (perform_training):
     net.train_routine(epochs)
 
-  if (net.save_params()):
+  if (save_params):
     net.save_params()
+
+  if (perform_evaluation_example):
+    net.perform_evaluation_example()
+
