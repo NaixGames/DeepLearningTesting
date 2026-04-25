@@ -119,63 +119,72 @@ class GoogLeNet(nn.Module):
 
     return {'hidden': hidden, 'logits': logits, 'aux_logits': aux_logits}
   
+  def train_routine(self, epoch : int) -> None:
+    from torch.utils.data import Dataset, DataLoader
+    import numpy as np
+    from scipy.spatial import distance
+
+    import torchvision
+    import torchvision.transforms as transforms
+    from torch.optim.lr_scheduler  import StepLR
+    import sys
+    sys.path.append("../Common")
+    from TrainUtils import train_for_classification, plot_results
+
+    transform = transforms.Compose(
+      [transforms.ToTensor(),
+      transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+                                          download=True, transform=transform)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+                                              shuffle=True, num_workers=2)
+
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+                                        download=True, transform=transform)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+                                          shuffle=False, num_workers=2)
+
+    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
+    # Definamos algunos hiper-parámetros
+    BATCH_SIZE = 128
+    LR = 0.1
+    EPOCHS = epoch
+    REPORTS_EVERY = 1
+
+    net = GoogLeNet(10, True) 
+    optimizer = optim.Adam(net.parameters())
+    criterion = nn.CrossEntropyLoss() 
+    scheduler = StepLR(optimizer, step_size=10, gamma=LR) 
+
+    train_loader = DataLoader(trainset, batch_size=BATCH_SIZE,
+                              shuffle=True, num_workers=2)
+    test_loader = DataLoader(testset, batch_size=4*BATCH_SIZE,
+                            shuffle=False, num_workers=2)
+
+    train_loss, acc = train_for_classification(net, train_loader, 
+                                              test_loader, optimizer, 
+                                              criterion, lr_scheduler=scheduler, 
+                                              epochs=EPOCHS, reports_every=REPORTS_EVERY)
+
+    plot_results(train_loss, acc)
+
+    #Test
+    x, y = list(test_loader)[0]
+    net.cpu()
+    net.eval()
+    y_pred = net(x)['logits'].max(dim=1)[1]
+
+    # Veamos como se comporta el modelo
+    print("Correct Test!" if (y==y_pred).sum()/len(x) >= .75 else "Failed Test! [acc]")
 
 if __name__ == "__main__":
-  from torch.utils.data import Dataset, DataLoader
-  import numpy as np
-  from scipy.spatial import distance
+  #Parms
+  number_classes = 10
+  use_aux_logit = True
+  
+  epochs = 5
 
-  import torchvision
-  import torchvision.transforms as transforms
-  from torch.optim.lr_scheduler  import StepLR
-  import sys
-  sys.path.append("../Common")
-  from TrainUtils import train_for_classification, plot_results
-
-  transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-  trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-  trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-                                            shuffle=True, num_workers=2)
-
-  testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-  testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=2)
-
-  classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-  # Definamos algunos hiper-parámetros
-  BATCH_SIZE = 128
-  LR = 0.1
-  EPOCHS = 10
-  REPORTS_EVERY = 1
-
-  net = GoogLeNet(10, True) 
-  optimizer = optim.Adam(net.parameters())
-  criterion = nn.CrossEntropyLoss() 
-  scheduler = StepLR(optimizer, step_size=10, gamma=LR) 
-
-  train_loader = DataLoader(trainset, batch_size=BATCH_SIZE,
-                            shuffle=True, num_workers=2)
-  test_loader = DataLoader(testset, batch_size=4*BATCH_SIZE,
-                          shuffle=False, num_workers=2)
-
-  train_loss, acc = train_for_classification(net, train_loader, 
-                                            test_loader, optimizer, 
-                                            criterion, lr_scheduler=scheduler, 
-                                            epochs=EPOCHS, reports_every=REPORTS_EVERY)
-
-  plot_results(train_loss, acc)
-
-  #Test
-  x, y = list(test_loader)[0]
-  net.cpu()
-  net.eval()
-  y_pred = net(x)['logits'].max(dim=1)[1]
-
-  # Veamos como se comporta el modelo
-  print("Correct Test!" if (y==y_pred).sum()/len(x) >= .75 else "Failed Test! [acc]")
+  net = GoogLeNet(number_classes, use_aux_logit)
+  net.train_routine(epochs)
