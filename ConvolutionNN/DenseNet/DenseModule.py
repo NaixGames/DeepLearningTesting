@@ -7,13 +7,13 @@ import DenseLayer
 class DenseModule(nn.Module):
   def __init__(self, input_channels : int, layers : int, k : int = 32):
     super(DenseModule, self).__init__()
-    layers = []
+    layers_cache = []
 
     for i in range(0, layers):
       dense_layer = DenseLayer.DenseLayer(input_channels + i*k, k)
-      layers.append(dense_layer)
+      layers_cache.append(dense_layer)
 
-    self.dense_block = nn.Sequential(*layers)
+    self.dense_block = nn.Sequential(*layers_cache)
 
 
   def forward(self, x : torch.Tensor) -> torch.Tensor:

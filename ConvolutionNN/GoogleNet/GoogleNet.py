@@ -128,6 +128,8 @@ if __name__ == "__main__":
   import torchvision
   import torchvision.transforms as transforms
   from torch.optim.lr_scheduler  import StepLR
+  import sys
+  sys.path.append("../Common")
   from TrainUtils import train_for_classification, plot_results
 
   transform = transforms.Compose(
