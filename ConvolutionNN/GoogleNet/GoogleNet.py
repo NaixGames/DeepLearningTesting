@@ -119,6 +119,12 @@ class GoogLeNet(nn.Module):
 
     return {'hidden': hidden, 'logits': logits, 'aux_logits': aux_logits}
   
+  def load_params(self) -> None:
+    pass
+
+  def save_params(self) -> None:
+    pass
+
   def train_routine(self, epoch : int) -> None:
     from torch.utils.data import Dataset, DataLoader
     import numpy as np
@@ -153,7 +159,6 @@ class GoogLeNet(nn.Module):
     EPOCHS = epoch
     REPORTS_EVERY = 1
 
-    net = GoogLeNet(10, True) 
     optimizer = optim.Adam(net.parameters())
     criterion = nn.CrossEntropyLoss() 
     scheduler = StepLR(optimizer, step_size=10, gamma=LR) 
@@ -163,7 +168,7 @@ class GoogLeNet(nn.Module):
     test_loader = DataLoader(testset, batch_size=4*BATCH_SIZE,
                             shuffle=False, num_workers=2)
 
-    train_loss, acc = train_for_classification(net, train_loader, 
+    train_loss, acc = train_for_classification(self, train_loader, 
                                               test_loader, optimizer, 
                                               criterion, lr_scheduler=scheduler, 
                                               epochs=EPOCHS, reports_every=REPORTS_EVERY)
@@ -172,19 +177,31 @@ class GoogLeNet(nn.Module):
 
     #Test
     x, y = list(test_loader)[0]
-    net.cpu()
-    net.eval()
-    y_pred = net(x)['logits'].max(dim=1)[1]
+    self.cpu()
+    self.eval()
+    y_pred = self(x)['logits'].max(dim=1)[1]
 
     # Veamos como se comporta el modelo
     print("Correct Test!" if (y==y_pred).sum()/len(x) >= .75 else "Failed Test! [acc]")
 
 if __name__ == "__main__":
-  #Parms
+  #Default Params
   number_classes = 10
   use_aux_logit = True
+
+  load_params = False
+  perform_traing = True
+  save_params = True
   
   epochs = 5
 
   net = GoogLeNet(number_classes, use_aux_logit)
-  net.train_routine(epochs)
+
+  if (load_params):
+    net.load_params()
+
+  if (perform_traing):
+    net.train_routine(epochs)
+
+  if (net.save_params()):
+    net.save_params()

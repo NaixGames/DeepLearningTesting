@@ -131,8 +131,19 @@ if __name__ == "__main__":
   k = 16
   num_classes = 10
 
+  load_params = False
+  perform_traing = True
+  save_params = True
+
   epochs = 5
 
   net = DenseNet(k, num_classes)
-  print("training net")
-  net.train_routine(epochs)
+  
+  if (load_params):
+    net.load_params()
+
+  if (perform_traing):
+    net.train_routine(epochs)
+
+  if (net.save_params()):
+    net.save_params()
